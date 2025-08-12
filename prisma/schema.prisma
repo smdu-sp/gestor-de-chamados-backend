@@ -7,87 +7,132 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Permissao {
-  DEV
-  ADM
-  TEC
-  USR
-}
-
-enum StatusAgendamento {
-  AGENDADO
-  CANCELADO
-  CONCLUIDO
-}
+// ==========================================
+// Modelos de Autenticação e Usuários
+// ==========================================
 
 model Usuario {
-  id            String    @id @default(uuid())
-  nome          String
-  nomeSocial    String?
-  login         String    @unique
-  email         String    @unique
-  permissao     Permissao @default(USR)
-  status        Boolean   @default(true)
-  avatar        String?   @db.Text
+  id              String    @id @default(uuid())
+  nome            String
+  login           String    @unique
+  email           String    @unique
+  status          Boolean   @default(true)
+  avatar          String?   @db.Text 
+  ultimoLogin     DateTime?          
+  criadoEm        DateTime  @default(now())
+  atualizadoEm    DateTime  @updatedAt
+  permissao       Permissao @default(USR)
 
-  ultimoLogin   DateTime  @default(now())
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @default(now()) @updatedAt
-
-  agendamentos  Agendamento[]
+  // Relações
+  chamadosAbertos   Chamado[]        @relation("CriadorDoChamado")
+  chamadosAtendidos TecnicoChamado[]
 
   @@map("usuarios")
 }
 
-model Agendamento {
-  id              String            @id @default(uuid())
-  municipe        String?
-  rg              String?
-  cpf             String?
-  processo        String?
-  dataInicio      DateTime
-  dataFim         DateTime
-  importado       Boolean           @default(false)
-  legado          Boolean           @default(false)
-  resumo          String?           @db.Text
-  motivoId        String?
-  coordenadoriaId String?
-  tecnicoId       String?
-  email           String?
-  status          StatusAgendamento @default(AGENDADO)
-
-  criadoEm        DateTime          @default(now())
-  atualizadoEm    DateTime          @default(now()) @updatedAt
-
-  motivo          Motivo?           @relation(fields: [motivoId], references: [id], onDelete: NoAction)
-  coordenadoria   Coordenadoria?    @relation(fields: [coordenadoriaId], references: [id], onDelete: NoAction)
-  tecnico         Usuario?          @relation(fields: [tecnicoId], references: [id], onDelete: NoAction)
-
-  @@map("agendamentos")
+enum Permissao {
+  ADM  // Administrador
+  SUP  // Técnico de Suporte (Help Desk)
+  INF  // Técnico de Infraestrutura
+  VOIP // Técnico de Telefonia
+  CAD  // Cadastro de usuários
+  USR  // Usuário comum (pode apenas abrir chamados)
+  IMP  // Técnico de Impressoras
+  DEV  // Desenvolvedor
 }
 
-model Motivo {
-  id              String          @id @default(uuid())
-  texto           String          @unique
-  status          Boolean         @default(true)
 
-  criadoEm        DateTime        @default(now())
-  atualizadoEm    DateTime        @default(now()) @updatedAt
+// ==========================================
+// Modelos do Sistema de Chamados
+// ==========================================
 
-  agendamentos    Agendamento[]
+model Chamado {
+  id             Int           @id @default(autoincrement())
+  titulo         String
+  descricao      String        @db.Text
+  status         StatusChamado @default(NOVO)
+  criadoEm       DateTime      @default(now())
+  atualizadoEm   DateTime      @updatedAt
+  solucionadoEm  DateTime?
+  fechadoEm      DateTime?
 
-  @@map("motivos")
+  categoriaId    Int
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
+
+
+  subcategoriaId Int
+  subcategoria   Subcategoria  @relation(fields: [subcategoriaId], references: [id])
+
+  criadorId      String
+  criador        Usuario       @relation("CriadorDoChamado", fields: [criadorId], references: [id])
+
+  tecnicos       TecnicoChamado[]
+
+  @@map("chamados")
 }
 
-model Coordenadoria {
-  id            String   @id @default(uuid())
-  sigla         String   @unique
-  status        Boolean  @default(true)
+model Acompanhamento {
+  id         Int      @id @default(autoincrement())
+  conteudo   String   @db.Text
+  criadoEm   DateTime @default(now())
 
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @default(now()) @updatedAt
+  
+  chamadoId  Int
+  chamado    Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
 
-  agendamentos    Agendamento[]
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
 
-  @@map("coordenadorias")
+  @@map("acompanhamentos")
+}
+
+
+model TecnicoChamado {
+  chamadoId   Int
+  chamado     Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+
+  tecnicoId   String
+  tecnico     Usuario @relation(fields: [tecnicoId], references: [id])
+
+  atribuidoEm DateTime @default(now())
+
+  @@id([chamadoId, tecnicoId])
+  @@map("tecnicos_chamados")
+}
+
+// ==========================================
+// Modelos de Categorização de Chamados
+// ==========================================
+
+model Categoria {
+  id            Int            @id @default(autoincrement())
+  nome          String         @unique // Ex: "Hardware", "Software", "Rede"
+
+  
+
+  subcategorias Subcategoria[]
+  chamados    Chamado[]
+
+
+  @@map("categorias")
+}
+
+model Subcategoria {
+  id          Int       @id @default(autoincrement())
+  nome        String    // Ex: "Mouse quebrado", "Instalar Office", "Ponto de rede"
+
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  chamados    Chamado[]
+
+  @@unique([categoriaId, nome])
+  @@map("subcategorias")
+}
+
+enum StatusChamado {
+  NOVO      // Chamado aberto e não atribuído a um técnico
+  ATRIBUIDO // chamado ainda em resolução e atribuído para umium técnico
+  RESOLVIDO // Chamado resolvido pelo técnico e aguardando confirmação
+  REJEITADO // Chamado que o usuário rejeitou a solução
+  FECHADO   // Chamad resolvido e confirmado pelo usuário
 }

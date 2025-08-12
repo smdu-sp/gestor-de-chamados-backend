@@ -54,7 +54,37 @@ export class UsuariosService {
 
   async buscarTecnicos(): Promise<{ id: string, nome: string }[]> {
     const lista: { id: string, nome: string }[] = await this.prisma.usuario.findMany({
-      where: { permissao: 'TEC' },
+      where: { permissao: 'SUP' },
+      orderBy: { nome: 'asc' },
+      select: { id: true, nome: true },
+    });
+    if (!lista || lista.length == 0) throw new ForbiddenException('Nenhum técnico encontrado.');
+    return lista;
+  }
+
+  async buscarInfra(): Promise<{ id: string, nome: string }[]> {
+    const lista: { id: string, nome: string }[] = await this.prisma.usuario.findMany({
+      where: { permissao: 'INF' },
+      orderBy: { nome: 'asc' },
+      select: { id: true, nome: true },
+    });
+    if (!lista || lista.length == 0) throw new ForbiddenException('Nenhum técnico encontrado.');
+    return lista;
+  }
+
+  async buscarCadastro(): Promise<{ id: string, nome: string }[]> {
+    const lista: { id: string, nome: string }[] = await this.prisma.usuario.findMany({
+      where: { permissao: 'CAD' },
+      orderBy: { nome: 'asc' },
+      select: { id: true, nome: true },
+    });
+    if (!lista || lista.length == 0) throw new ForbiddenException('Nenhum técnico encontrado.');
+    return lista;
+  }
+
+  async buscarVoip(): Promise<{ id: string, nome: string }[]> {
+    const lista: { id: string, nome: string }[] = await this.prisma.usuario.findMany({
+      where: { permissao: 'VOIP' },
       orderBy: { nome: 'asc' },
       select: { id: true, nome: true },
     });
