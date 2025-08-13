@@ -6,12 +6,11 @@ import { Categoria } from '@prisma/client';
 export class CategoriaService {
   constructor(private prisma: PrismaService) {}
 
-
   async findAll(): Promise<Categoria[]> {
     return this.prisma.categoria.findMany();
   }
 
-  async findOne(id: number): Promise<Categoria | null> {
+  async findOne(id: string): Promise<Categoria | null> {
     return this.prisma.categoria.findUnique({ where: { id } });
   }
 
@@ -19,11 +18,23 @@ export class CategoriaService {
     return this.prisma.categoria.create({ data });
   }
 
-  async update(id: number, data: { nome?: string }): Promise<Categoria> {
+  async update(id: string, data: { nome?: string }): Promise<Categoria> {
     return this.prisma.categoria.update({ where: { id }, data });
   }
 
-  async remove(id: number): Promise<Categoria> {
-    return this.prisma.categoria.delete({ where: { id } });
+  async ativar(id: string): Promise<{ ativado: boolean }> {
+    await this.prisma.categoria.update({
+      where: { id },
+      data: { status: true },
+    });
+    return { ativado: true };
+  }
+
+  async excluir(id: string): Promise<{ desativado: boolean }> {
+    await this.prisma.categoria.update({
+      data: { status: false },
+      where: { id },
+    });
+    return { desativado: true };
   }
 }

@@ -40,6 +40,7 @@ export class AuthService {
   }
 
   async validateUser(login: string, senha: string) {
+    console.log(login);
     let usuario = await this.usuariosService.buscarPorLogin(login);
     if (!usuario) throw new UnauthorizedException('Credenciais incorretas.');
     if (usuario && usuario.status === false)
