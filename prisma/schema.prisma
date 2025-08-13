@@ -117,12 +117,21 @@ model Subcategoria {
   id   Int    @id @default(autoincrement())
   nome String
 
-  categoriaId Int
+  categoriaId String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   chamados    Chamado[]
 
   @@unique([categoriaId, nome])
   @@map("subcategorias")
+}
+
+model CategoriaPermissao {
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  permissao   Permissao
+
+  @@id([categoriaId, permissao])
+  @@map("categoria_permissoes")
 }
 
 enum StatusChamado {
