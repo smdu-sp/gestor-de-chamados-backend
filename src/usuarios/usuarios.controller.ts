@@ -15,7 +15,13 @@ import { Permissoes } from 'src/auth/decorators/permissoes.decorator';
 import { UsuarioAtual } from 'src/auth/decorators/usuario-atual.decorator';
 import { Usuario } from '@prisma/client';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { BuscarNovoResponseDTO, UsuarioAutorizadoResponseDTO, UsuarioDesativadoResponseDTO, UsuarioPaginadoResponseDTO, UsuarioResponseDTO } from './dto/usuario-response.dto';
+import {
+  BuscarNovoResponseDTO,
+  UsuarioAutorizadoResponseDTO,
+  UsuarioDesativadoResponseDTO,
+  UsuarioPaginadoResponseDTO,
+  UsuarioResponseDTO,
+} from './dto/usuario-response.dto';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()
@@ -41,7 +47,13 @@ export class UsuariosController {
     @Query('status') status?: string,
     @Query('permissao') permissao?: string,
   ): Promise<UsuarioPaginadoResponseDTO> {
-    return this.usuariosService.buscarTudo(+pagina, +limite, busca, status, permissao);
+    return this.usuariosService.buscarTudo(
+      +pagina,
+      +limite,
+      busca,
+      status,
+      permissao,
+    );
   }
 
   @Permissoes('ADM')
@@ -55,7 +67,7 @@ export class UsuariosController {
   atualizar(
     @UsuarioAtual() usuario: Usuario,
     @Param('id') id: string,
-    @Body() updateUsuarioDto: UpdateUsuarioDto
+    @Body() updateUsuarioDto: UpdateUsuarioDto,
   ): Promise<UsuarioResponseDTO> {
     return this.usuariosService.atualizar(usuario, id, updateUsuarioDto);
   }
@@ -68,19 +80,24 @@ export class UsuariosController {
 
   @Permissoes('ADM')
   @Get('buscar-tecnicos')
-  buscarTecnicos(): Promise<{ id: string, nome: string }[]> {
+  buscarTecnicos(): Promise<{ id: string; nome: string }[]> {
     return this.usuariosService.buscarTecnicos();
   }
 
   @Permissoes('ADM')
   @Delete('desativar/:id')
-  excluir(@Param('id') id: string): Promise<UsuarioDesativadoResponseDTO> {
-    return this.usuariosService.excluir(id);
+  excluir(
+    @UsuarioAtual() usuarioId: string,
+    @Param('id') id: string,
+  ): Promise<UsuarioDesativadoResponseDTO> {
+    return this.usuariosService.excluir(id, usuarioId);
   }
 
   @Permissoes('ADM')
   @Patch('autorizar/:id')
-  autorizarUsuario(@Param('id') id: string): Promise<UsuarioAutorizadoResponseDTO> {
+  autorizarUsuario(
+    @Param('id') id: string,
+  ): Promise<UsuarioAutorizadoResponseDTO> {
     return this.usuariosService.autorizaUsuario(id);
   }
 

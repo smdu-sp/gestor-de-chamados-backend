@@ -1,29 +1,90 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Categoria } from '@prisma/client';
+import { CreateCategoriaDto } from './dto/create-categoria.dto';
+import { UpdateCategoriaDto } from './dto/update-categoria.dto';
+import { LogService } from 'src/logs/log.service';
 
 @Injectable()
 export class CategoriaService {
-  constructor(private prisma: PrismaService) {}
-
+  constructor(
+    private readonly logService: LogService,
+    private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<Categoria[]> {
     return this.prisma.categoria.findMany();
   }
 
   async findOne(id: number): Promise<Categoria | null> {
-    return this.prisma.categoria.findUnique({ where: { id } });
+    const categoria = await this.prisma.categoria.findUnique({
+      where: { id },
+    });
+    if (!categoria)
+      throw new NotFoundException(`Categoria com id ${id} não encontrada.`);
+    return categoria;
   }
 
-  async create(data: { nome: string }): Promise<Categoria> {
-    return this.prisma.categoria.create({ data });
+  async create(
+    createCategoriaDto: CreateCategoriaDto,
+    usuarioId: string,
+  ): Promise<Categoria> {
+    const categoria = await this.prisma.categoria.create({
+      data: createCategoriaDto,
+    });
+
+    await this.logService.criarLog(
+      usuarioId,
+      'CREATE',
+      'Categoria',
+      categoria.id.toString(),
+      JSON.stringify(createCategoriaDto),
+    );
+
+    return categoria;
   }
 
-  async update(id: number, data: { nome?: string }): Promise<Categoria> {
-    return this.prisma.categoria.update({ where: { id }, data });
+  async update(
+    id: number,
+    updateCategoriaDto: UpdateCategoriaDto,
+    usuarioId: string,
+  ): Promise<Categoria> {
+    const categoria = await this.prisma.categoria.findUnique({ where: { id } });
+    if (!categoria)
+      throw new NotFoundException(`Categoria com id ${id} não encontrada.`);
+
+    const categoriaAtualizada = await this.prisma.categoria.update({
+      where: { id },
+      data: updateCategoriaDto,
+    });
+
+    await this.logService.criarLog(
+      usuarioId,
+      'UPDATE',
+      'Categoria',
+      id.toString(),
+      JSON.stringify(updateCategoriaDto),
+    );
+
+    return categoriaAtualizada;
   }
 
-  async remove(id: number): Promise<Categoria> {
-    return this.prisma.categoria.delete({ where: { id } });
+  async remove(id: number, usuarioId: string): Promise<Categoria> {
+    const categoria = await this.prisma.categoria.findUnique({ where: { id } });
+    if (!categoria)
+      throw new NotFoundException(`Categoria com id ${id} não encontrada.`);
+
+    const categoriaRemovida = await this.prisma.categoria.delete({
+      where: { id },
+    });
+
+    await this.logService.criarLog(
+      usuarioId,
+      'DELETE',
+      'Categoria',
+      id.toString(),
+      JSON.stringify(categoriaRemovida),
+    );
+
+    return categoriaRemovida;
   }
 }

@@ -12,87 +12,86 @@ datasource db {
 // ==========================================
 
 model Usuario {
-  id              String    @id @default(uuid())
-  nome            String
-  login           String    @unique
-  email           String    @unique
-  status          Boolean   @default(true)
-  avatar          String?   @db.Text 
-  ultimoLogin     DateTime?          
-  criadoEm        DateTime  @default(now())
-  atualizadoEm    DateTime  @updatedAt
-  permissao       Permissao @default(USR)
+  id           String    @id @default(uuid())
+  nome         String
+  login        String    @unique
+  email        String    @unique
+  status       Boolean   @default(true)
+  avatar       String?   @db.Text
+  ultimoLogin  DateTime?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  permissao    Permissao @default(USR)
 
   // Relações
   chamadosAbertos   Chamado[]        @relation("CriadorDoChamado")
   chamadosAtendidos TecnicoChamado[]
+  acompanhamentos   Acompanhamento[]
+  logs              LogSistema[]
 
   @@map("usuarios")
 }
 
 enum Permissao {
-  ADM  // Administrador
-  SUP  // Técnico de Suporte (Help Desk)
-  INF  // Técnico de Infraestrutura
-  VOIP // Técnico de Telefonia
-  CAD  // Cadastro de usuários
-  USR  // Usuário comum (pode apenas abrir chamados)
-  IMP  // Técnico de Impressoras
-  DEV  // Desenvolvedor
+  ADM
+  SUP
+  INF
+  VOIP
+  CAD
+  USR
+  IMP
+  DEV
 }
-
 
 // ==========================================
 // Modelos do Sistema de Chamados
 // ==========================================
 
 model Chamado {
-  id             Int           @id @default(autoincrement())
-  titulo         String
-  descricao      String        @db.Text
-  status         StatusChamado @default(NOVO)
-  criadoEm       DateTime      @default(now())
-  atualizadoEm   DateTime      @updatedAt
-  solucionadoEm  DateTime?
-  fechadoEm      DateTime?
+  id            Int           @id @default(autoincrement())
+  titulo        String
+  descricao     String        @db.Text
+  status        StatusChamado @default(NOVO)
+  criadoEm      DateTime      @default(now())
+  atualizadoEm  DateTime      @updatedAt
+  solucionadoEm DateTime?
+  fechadoEm     DateTime?
 
-  categoriaId    Int
-  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
-
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
 
   subcategoriaId Int
-  subcategoria   Subcategoria  @relation(fields: [subcategoriaId], references: [id])
+  subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
 
-  criadorId      String
-  criador        Usuario       @relation("CriadorDoChamado", fields: [criadorId], references: [id])
+  criadorId String
+  criador   Usuario @relation("CriadorDoChamado", fields: [criadorId], references: [id])
 
-  tecnicos       TecnicoChamado[]
+  tecnicos        TecnicoChamado[]
+  acompanhamentos Acompanhamento[]
 
   @@map("chamados")
 }
 
 model Acompanhamento {
-  id         Int      @id @default(autoincrement())
-  conteudo   String   @db.Text
-  criadoEm   DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  conteudo String   @db.Text
+  criadoEm DateTime @default(now())
 
-  
-  chamadoId  Int
-  chamado    Chamado  @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  chamadoId Int
+  chamado   Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
 
-  usuarioId  String
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   @@map("acompanhamentos")
 }
 
-
 model TecnicoChamado {
-  chamadoId   Int
-  chamado     Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  chamadoId Int
+  chamado   Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
 
-  tecnicoId   String
-  tecnico     Usuario @relation(fields: [tecnicoId], references: [id])
+  tecnicoId String
+  tecnico   Usuario @relation(fields: [tecnicoId], references: [id])
 
   atribuidoEm DateTime @default(now())
 
@@ -105,21 +104,18 @@ model TecnicoChamado {
 // ==========================================
 
 model Categoria {
-  id            Int            @id @default(autoincrement())
-  nome          String         @unique // Ex: "Hardware", "Software", "Rede"
-
-  
+  id   Int    @id @default(autoincrement())
+  nome String @unique
 
   subcategorias Subcategoria[]
-  chamados    Chamado[]
-
+  chamados      Chamado[]
 
   @@map("categorias")
 }
 
 model Subcategoria {
-  id          Int       @id @default(autoincrement())
-  nome        String    // Ex: "Mouse quebrado", "Instalar Office", "Ponto de rede"
+  id   Int    @id @default(autoincrement())
+  nome String
 
   categoriaId Int
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
@@ -130,9 +126,26 @@ model Subcategoria {
 }
 
 enum StatusChamado {
-  NOVO      // Chamado aberto e não atribuído a um técnico
-  ATRIBUIDO // chamado ainda em resolução e atribuído para umium técnico
-  RESOLVIDO // Chamado resolvido pelo técnico e aguardando confirmação
-  REJEITADO // Chamado que o usuário rejeitou a solução
-  FECHADO   // Chamad resolvido e confirmado pelo usuário
+  NOVO
+  ATRIBUIDO
+  RESOLVIDO
+  REJEITADO
+  FECHADO
+}
+
+// ==========================================
+// Modelos de Auditoria do Sistema
+// ==========================================
+
+model LogSistema {
+  id         Int      @id @default(autoincrement())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  acao       String
+  entidade   String
+  entidadeId String
+  detalhes   String?  @db.Text
+  criadoEm   DateTime @default(now())
+
+  @@map("logs_sistema")
 }
