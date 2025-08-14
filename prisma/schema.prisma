@@ -26,7 +26,8 @@ model Usuario {
   // Relações
   chamadosAbertos   Chamado[]        @relation("CriadorDoChamado")
   chamadosAtendidos TecnicoChamado[]
-  Acompanhamento    Acompanhamento[]
+  acompanhamentos   Acompanhamento[]
+  logs              LogSistema[]
 
   @@map("usuarios")
 }
@@ -65,8 +66,8 @@ model Chamado {
   criadorId String
   criador   Usuario @relation("CriadorDoChamado", fields: [criadorId], references: [id])
 
-  tecnicos       TecnicoChamado[]
-  Acompanhamento Acompanhamento[]
+  tecnicos        TecnicoChamado[]
+  acompanhamentos Acompanhamento[]
 
   @@map("chamados")
 }
@@ -138,9 +139,26 @@ model CategoriaPermissao {
 }
 
 enum StatusChamado {
-  NOVO // Chamado aberto e não atribuído a um técnico
-  ATRIBUIDO // chamado ainda em resolução e atribuído para umium técnico
-  RESOLVIDO // Chamado resolvido pelo técnico e aguardando confirmação
-  REJEITADO // Chamado que o usuário rejeitou a solução
-  FECHADO // Chamad resolvido e confirmado pelo usuário
+  NOVO
+  ATRIBUIDO
+  RESOLVIDO
+  REJEITADO
+  FECHADO
+}
+
+// ==========================================
+// Modelos de Auditoria do Sistema
+// ==========================================
+
+model LogSistema {
+  id   String    @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  acao       String
+  entidade   String
+  entidadeId String
+  detalhes   String?  @db.Text
+  criadoEm   DateTime @default(now())
+
+  @@map("logs_sistema")
 }
