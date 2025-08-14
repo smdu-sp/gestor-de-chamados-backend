@@ -14,9 +14,9 @@ export class CreateChamadoDto {
 
   @ApiProperty({ example: 1 })
   @IsInt()
-  categoriaId: number;
+  categoriaId: string;
 
   @ApiProperty({ example: 1 })
   @IsInt()
-  subcategoriaId: number;
+  subcategoriaId: string;
 }

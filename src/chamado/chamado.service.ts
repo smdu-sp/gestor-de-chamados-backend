@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { LogService } from 'src/logs/log.service';
+import { LogsService } from 'src/logs/logs.service';
 import { Chamado, StatusChamado } from '@prisma/client';
 import { CreateChamadoDto } from './dto/create-chamado.dto';
 import { UpdateChamadoDto } from './dto/update-chamado.dto';
@@ -14,7 +14,7 @@ import { AppService } from "src/app.service";
 export class ChamadoService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly logService: LogService,
+    private readonly logService: LogsService,
     private readonly app: AppService,
   ) {}
 
@@ -23,8 +23,8 @@ export class ChamadoService {
     limite: number = 10,
     busca?: string,
     status?: 'NOVO' | 'EM_ANDAMENTO' | 'RESOLVIDO' | 'FECHADO',
-    categoriaId?: number,
-    subcategoriaId?: number,
+    categoriaId?: string,
+    subcategoriaId?: string,
   ): Promise<{
     total: number;
     pagina: number;
@@ -61,7 +61,7 @@ export class ChamadoService {
     return { total, pagina, limite, data };
   }
 
-  async findOne(id: number): Promise<Chamado> {
+  async findOne(id: string): Promise<Chamado> {
     const chamado = await this.prisma.chamado.findUnique({
       where: { id },
       include: {
@@ -101,7 +101,7 @@ export class ChamadoService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateChamadoDto: UpdateChamadoDto,
     usuarioId: string,
   ): Promise<Chamado> {
@@ -126,7 +126,7 @@ export class ChamadoService {
     }
   }
 
-  async remove(id: number, usuarioId: string): Promise<Chamado> {
+  async remove(id: string, usuarioId: string): Promise<Chamado> {
     await this.findOne(id);
 
     try {
@@ -146,7 +146,7 @@ export class ChamadoService {
   }
 
   async mudarStatus(
-    id: number,
+    id: string,
     status: StatusChamado,
     usuarioId: string,
   ): Promise<Chamado> {

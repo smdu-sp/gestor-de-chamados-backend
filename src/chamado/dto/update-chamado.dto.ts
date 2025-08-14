@@ -20,10 +20,10 @@ export class UpdateChamadoDto {
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
   @IsOptional()
-  categoriaId?: number;
+  categoriaId?: string;
 
   @ApiPropertyOptional({ example: 1 })
   @IsInt()
   @IsOptional()
-  subcategoriaId?: number;
+  subcategoriaId?: string;
 }

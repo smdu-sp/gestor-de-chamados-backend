@@ -6,8 +6,7 @@ import {
   Param,
   Put,
   Patch,
-  Delete,
-  ParseIntPipe,
+  Delete,  
   Query,
 } from '@nestjs/common';
 import { ChamadoService } from './chamado.service';
@@ -40,14 +39,14 @@ export class ChamadoController {
       +limite,
       busca,
       status as any,
-      categoriaId ? +categoriaId : undefined,
-      subcategoriaId ? +subcategoriaId : undefined,
+      categoriaId,
+      subcategoriaId,
     );
   }
 
   @Permissoes('ADM', 'TEC', 'USR')
   @Get('buscar-por-id/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id') id: string) {
     return this.chamadoService.findOne(id);
   }
 
@@ -64,7 +63,7 @@ export class ChamadoController {
   @Put('atualizar/:id')
   update(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateChamadoDto: UpdateChamadoDto,
   ) {
     return this.chamadoService.update(id, updateChamadoDto, usuario.id);
@@ -74,7 +73,7 @@ export class ChamadoController {
   @Patch('atualizar-status/:id')
   mudarStatus(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() mudarStatusDto: UpdateStatusChamadoDto,
   ) {
     return this.chamadoService.mudarStatus(
@@ -88,7 +87,7 @@ export class ChamadoController {
   @Delete('remover/:id')
   remove(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
   ) {
     return this.chamadoService.remove(id, usuario.id);
   }

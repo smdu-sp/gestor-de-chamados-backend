@@ -18,14 +18,14 @@ import {
   UsuarioPaginadoResponseDTO,
   UsuarioResponseDTO,
 } from './dto/usuario-response.dto';
-import { LogService } from 'src/logs/log.service';
+import { LogsService } from 'src/logs/logs.service';
 
 @Global()
 @Injectable()
 export class UsuariosService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly logService: LogService,
+    private readonly logService: LogsService,
     private readonly app: AppService,
   ) {}
 

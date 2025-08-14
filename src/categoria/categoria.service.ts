@@ -3,12 +3,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Categoria } from '@prisma/client';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
-import { LogService } from 'src/logs/log.service';
+import { LogsService } from 'src/logs/logs.service';
 
 @Injectable()
 export class CategoriaService {
   constructor(
-    private readonly logService: LogService,
+    private readonly logService: LogsService,
     private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<Categoria[]> {

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import {
   Controller,
   Get,
@@ -6,8 +5,7 @@ import {
   Body,
   Param,
   Put,
-  Delete,
-  ParseIntPipe,
+  Delete,  
 } from '@nestjs/common';
 import { CategoriaService } from './categoria.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
@@ -22,18 +20,16 @@ import { Permissoes } from 'src/auth/decorators/permissoes.decorator';
 export class CategoriaController {
   constructor(private readonly categoriaService: CategoriaService) {}
 
+  @Permissoes('ADM')
   @Get('buscar-tudo')
   findAll() {
     return this.categoriaService.findAll();
   }
 
-<<<<<<< HEAD
+  @Permissoes('ADM')
   @Get('buscar-por-id/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-=======
-  @Get(':id')
   findOne(@Param('id') id: string) {
->>>>>>> origin/main
+ 
     return this.categoriaService.findOne(id);
   }
 
@@ -46,12 +42,11 @@ export class CategoriaController {
     return this.categoriaService.create(createCategoriaDto, usuario.id);
   }
 
-<<<<<<< HEAD
   @Permissoes('ADM')
   @Put('atualizar/:id')
   update(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateCategoriaDto: UpdateCategoriaDto,
   ) {
     return this.categoriaService.update(id, updateCategoriaDto, usuario.id);
@@ -61,7 +56,7 @@ export class CategoriaController {
   @Delete('desativar/:id')
   remove(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
   ) {
     return this.categoriaService.remove(id, usuario.id);
   }
