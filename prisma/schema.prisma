@@ -33,14 +33,14 @@ model Usuario {
 }
 
 enum Permissao {
-  ADM
-  SUP
-  INF
-  VOIP
-  CAD
-  USR
-  IMP
-  DEV
+  ADM // Administrador
+  SUP // Técnico de Suporte (Help Desk)
+  INF // Técnico de Infraestrutura
+  VOIP // Técnico de Telefonia
+  CAD // Cadastro de usuários
+  USR // Usuário comum (pode apenas abrir chamados)
+  IMP // Técnico de Impressoras
+  DEV // Desenvolvedor
 }
 
 // ==========================================
@@ -48,7 +48,7 @@ enum Permissao {
 // ==========================================
 
 model Chamado {
-  id            Int           @id @default(autoincrement())
+  id           String    @id @default(uuid())  
   titulo        String
   descricao     String        @db.Text
   status        StatusChamado @default(NOVO)
@@ -57,10 +57,10 @@ model Chamado {
   solucionadoEm DateTime?
   fechadoEm     DateTime?
 
-  categoriaId Int
+  categoriaId String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
 
-  subcategoriaId Int
+  subcategoriaId String
   subcategoria   Subcategoria @relation(fields: [subcategoriaId], references: [id])
 
   criadorId String
@@ -73,11 +73,11 @@ model Chamado {
 }
 
 model Acompanhamento {
-  id       Int      @id @default(autoincrement())
+  id       String    @id @default(uuid())
   conteudo String   @db.Text
   criadoEm DateTime @default(now())
 
-  chamadoId Int
+  chamadoId String
   chamado   Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
 
   usuarioId String
@@ -87,7 +87,7 @@ model Acompanhamento {
 }
 
 model TecnicoChamado {
-  chamadoId Int
+  chamadoId String
   chamado   Chamado @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
 
   tecnicoId String
@@ -104,8 +104,12 @@ model TecnicoChamado {
 // ==========================================
 
 model Categoria {
-  id   Int    @id @default(autoincrement())
-  nome String @unique
+  id                 String    @id @default(uuid())
+  nome               String               @unique // Ex: "Hardware", "Software", "Rede"
+  status             Boolean              @default(true)
+  permissoesVisiveis CategoriaPermissao[]
+  criadoEm      DateTime      @default(now())
+  atualizadoEm  DateTime      @updatedAt
 
   subcategorias Subcategoria[]
   chamados      Chamado[]
@@ -114,10 +118,10 @@ model Categoria {
 }
 
 model Subcategoria {
-  id   Int    @id @default(autoincrement())
-  nome String
+  id   String    @id @default(uuid())
+  nome String // Ex: "Mouse quebrado", "Instalar Office", "Ponto de rede"
 
-  categoriaId Int
+  categoriaId String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   chamados    Chamado[]
 
@@ -125,12 +129,21 @@ model Subcategoria {
   @@map("subcategorias")
 }
 
+model CategoriaPermissao {
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  permissao   Permissao
+
+  @@id([categoriaId, permissao])
+  @@map("categoria_permissoes")
+}
+
 enum StatusChamado {
-  NOVO
-  ATRIBUIDO
-  RESOLVIDO
-  REJEITADO
-  FECHADO
+  NOVO      // Chamado aberto e não atribuído a um técnico
+  ATRIBUIDO // chamado ainda em resolução e atribuído para umium técnico
+  RESOLVIDO // Chamado resolvido pelo técnico e aguardando confirmação
+  REJEITADO // Chamado que o usuário rejeitou a solução
+  FECHADO   // Chamad resolvido e confirmado pelo usuário
 }
 
 // ==========================================

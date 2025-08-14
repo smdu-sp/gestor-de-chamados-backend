@@ -26,8 +26,13 @@ export class CategoriaController {
     return this.categoriaService.findAll();
   }
 
+<<<<<<< HEAD
   @Get('buscar-por-id/:id')
   findOne(@Param('id', ParseIntPipe) id: number) {
+=======
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+>>>>>>> origin/main
     return this.categoriaService.findOne(id);
   }
 
@@ -40,6 +45,7 @@ export class CategoriaController {
     return this.categoriaService.create(createCategoriaDto, usuario.id);
   }
 
+<<<<<<< HEAD
   @Permissoes('ADM')
   @Put('atualizar/:id')
   update(

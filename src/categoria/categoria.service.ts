@@ -15,7 +15,7 @@ export class CategoriaService {
     return this.prisma.categoria.findMany();
   }
 
-  async findOne(id: number): Promise<Categoria | null> {
+  async findOne(id: string): Promise<Categoria | null> {
     const categoria = await this.prisma.categoria.findUnique({
       where: { id },
     });
@@ -44,7 +44,7 @@ export class CategoriaService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateCategoriaDto: UpdateCategoriaDto,
     usuarioId: string,
   ): Promise<Categoria> {
@@ -68,7 +68,15 @@ export class CategoriaService {
     return categoriaAtualizada;
   }
 
-  async remove(id: number, usuarioId: string): Promise<Categoria> {
+  async ativar(id: string): Promise<{ ativado: boolean }> {
+    await this.prisma.categoria.update({
+      where: { id },
+      data: { status: true },
+    });
+    return { ativado: true };
+  }
+
+  async remove(id: string, usuarioId: string): Promise<Categoria> {
     const categoria = await this.prisma.categoria.findUnique({ where: { id } });
     if (!categoria)
       throw new NotFoundException(`Categoria com id ${id} não encontrada.`);
