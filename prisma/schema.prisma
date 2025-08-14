@@ -139,11 +139,11 @@ model CategoriaPermissao {
 }
 
 enum StatusChamado {
-  NOVO      // Chamado aberto e não atribuído a um técnico
-  ATRIBUIDO // chamado ainda em resolução e atribuído para umium técnico
-  RESOLVIDO // Chamado resolvido pelo técnico e aguardando confirmação
-  REJEITADO // Chamado que o usuário rejeitou a solução
-  FECHADO   // Chamad resolvido e confirmado pelo usuário
+  NOVO
+  ATRIBUIDO
+  RESOLVIDO
+  REJEITADO
+  FECHADO
 }
 
 // ==========================================
@@ -151,7 +151,7 @@ enum StatusChamado {
 // ==========================================
 
 model LogSistema {
-  id         Int      @id @default(autoincrement())
+  id   String    @id @default(uuid())
   usuarioId  String
   usuario    Usuario  @relation(fields: [usuarioId], references: [id])
   acao       String
