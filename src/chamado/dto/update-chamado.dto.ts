@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 import { StatusChamado } from '@prisma/client';
 
 export class UpdateChamadoDto {
@@ -9,21 +9,23 @@ export class UpdateChamadoDto {
   titulo?: string;
 
   @ApiPropertyOptional({ example: 'Nova descrição' })
-  @IsString()
+  @IsString({ message: 'Deve ser texto.' })
   @IsOptional()
   descricao?: string;
 
-  @ApiPropertyOptional({ enum: ['NOVO', 'EM_ANDAMENTO', 'SOLUCIONADO', 'FECHADO'] })
+  @ApiPropertyOptional({
+    enum: ['NOVO', 'ATRIBUIDO', 'RESOLVIDO', 'REJEITADO', 'FECHADO'],
+  })
   @IsOptional()
   status?: StatusChamado;
 
-  @ApiPropertyOptional({ example: 1 })
-  @IsInt()
+  @ApiPropertyOptional({ description: 'ID da categoria relacionada (UUID).' })
+  @IsString({ message: 'CategoriaId deve ser string.' })
   @IsOptional()
-  categoriaId?: number;
+  categoriaId?: string;
 
-  @ApiPropertyOptional({ example: 1 })
-  @IsInt()
+  @ApiPropertyOptional({ description: 'ID da subcategoria relacionada (UUID).' })
+  @IsString({ message: 'SubcategoriaId deve ser string.' })
   @IsOptional()
-  subcategoriaId?: number;
+  subcategoriaId?: string;
 }

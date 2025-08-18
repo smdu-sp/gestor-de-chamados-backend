@@ -13,7 +13,7 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Permissoes } from 'src/auth/decorators/permissoes.decorator';
 import { UsuarioAtual } from 'src/auth/decorators/usuario-atual.decorator';
-import { Usuario } from '@prisma/client';
+import { Permissao, Usuario } from '@prisma/client';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   BuscarNovoResponseDTO,
@@ -22,6 +22,7 @@ import {
   UsuarioPaginadoResponseDTO,
   UsuarioResponseDTO,
 } from './dto/usuario-response.dto';
+import { IsPublic } from 'src/auth/decorators/is-public.decorator';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()
@@ -110,5 +111,22 @@ export class UsuariosController {
   @Get('buscar-novo/:login')
   buscarNovo(@Param('login') login: string): Promise<BuscarNovoResponseDTO> {
     return this.usuariosService.buscarNovo(login);
+  }
+
+  @Post('publico/criar')
+  @IsPublic()
+  async criarPublico(
+    @Body() createUsuarioDto: CreateUsuarioDto,
+  ): Promise<UsuarioResponseDTO> {
+    // Define permissão padrão para usuários novos
+    createUsuarioDto.permissao = Permissao.USR;
+
+    // Finge que está logado como um usuário mínimo (necessário pro service)
+    const usuarioFake = {
+      id: 'publico',
+      permissao: Permissao.USR,
+    } as Usuario;
+
+    return this.usuariosService.criarPublico(createUsuarioDto, usuarioFake);
   }
 }

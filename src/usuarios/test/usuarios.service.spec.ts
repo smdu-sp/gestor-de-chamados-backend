@@ -6,14 +6,12 @@ import { SguService } from 'src/prisma/sgu.service';
 import { UsuariosService } from '../usuarios.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { $Enums, Usuario } from '@prisma/client';
-import { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import {
   InternalServerErrorException,
-  ForbiddenException,
-  NotFoundException,
 } from '@nestjs/common';
 import { Client as LdapClient } from 'ldapts';
+import { LogService } from 'src/logs/log.service';
 
 describe('Usuarios.service testes unitários', () => {
   let service: UsuariosService;
@@ -30,6 +28,9 @@ describe('Usuarios.service testes unitários', () => {
       findUnique: jest.fn(),
       count: jest.fn(),
     },
+    logSistema: {
+      create: jest.fn(),
+    }
   };
 
   const MockAppService = {
@@ -39,12 +40,6 @@ describe('Usuarios.service testes unitários', () => {
     verificaLimite: jest
       .fn()
       .mockImplementation((pagina, limite, total) => [pagina, limite]),
-  };
-
-  const mockLdapService = {
-    bind: jest.fn(),
-    search: jest.fn(),
-    unbind: jest.fn(),
   };
 
   const mockLdapBind = jest.fn();
@@ -69,6 +64,7 @@ describe('Usuarios.service testes unitários', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsuariosService,
+        LogService,
         {
           provide: PrismaService,
           useValue: MockPrismaService,
@@ -102,7 +98,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '1',
         nome: 'João Silva',
-        nomeSocial: 'lukuzinha',
         login: 'joao.silva',
         email: 'joao.silva@example.com',
         status: true,
@@ -115,7 +110,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '2',
         nome: 'Maria Souza',
-        nomeSocial: 'lukuzinha',
         login: 'maria.souza',
         email: 'maria.souza@example.com',
         status: true,
@@ -128,7 +122,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '3',
         nome: 'Carlos Pereira',
-        nomeSocial: 'lukuzinha',
         login: 'carlos.pereira',
         email: 'carlos.pereira@example.com',
         status: false,
@@ -151,7 +144,6 @@ describe('Usuarios.service testes unitários', () => {
   it('deverá verificar se um usuário pode ser criado', async () => {
     const mockCreateUser: CreateUsuarioDto = {
       nome: 'Carlos Pereira',
-      nomeSocial: 'Carlão',
       login: 'carlos.pereira',
       email: 'carlos.pereira@example.com',
       status: false,
@@ -162,7 +154,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockResponseUser: UsuarioResponseDTO = {
       id: '3',
       nome: 'Carlos Pereira',
-      nomeSocial: 'Carlão',
       login: 'carlos.pereira',
       email: 'carlos.pereira@example.com',
       status: false,
@@ -176,7 +167,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockUserLogado: Usuario = {
       id: '3',
       nome: 'Carlos Pereira',
-      nomeSocial: 'lukuzinha',
       login: 'carlos.pereira',
       email: 'carlos.pereira@example.com',
       permissao: $Enums.Permissao.ADM,
@@ -212,7 +202,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '1',
         nome: 'João Silva',
-        nomeSocial: 'lukuzinha',
         login: 'joao.silva',
         email: 'joao.silva@example.com',
         status: true,
@@ -225,7 +214,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '2',
         nome: 'Maria Souza',
-        nomeSocial: 'lukuzinha',
         login: 'maria.souza',
         email: 'maria.souza@example.com',
         status: true,
@@ -238,7 +226,6 @@ describe('Usuarios.service testes unitários', () => {
       {
         id: '3',
         nome: 'Carlos Pereira',
-        nomeSocial: 'lukuzinha',
         login: 'carlos.pereira',
         email: 'carlos.pereira@example.com',
         status: false,
@@ -283,7 +270,6 @@ describe('Usuarios.service testes unitários', () => {
       where: {
         OR: [
           { nome: { contains: expect.any(String) } },
-          { nomeSocial: { contains: expect.any(String) } },
           { login: { contains: expect.any(String) } },
           { email: { contains: expect.any(String) } },
         ],
@@ -294,7 +280,6 @@ describe('Usuarios.service testes unitários', () => {
       where: {
         OR: [
           { nome: { contains: mockParams.busca } },
-          { nomeSocial: { contains: mockParams.busca } },
           { login: { contains: mockParams.busca } },
           { email: { contains: mockParams.busca } },
         ],
@@ -310,7 +295,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockResponseUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -341,7 +325,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockResponseUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -372,7 +355,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockResponseUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -403,7 +385,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockUserAtualizar: Usuario = {
       id: '3',
       nome: 'Carlos Pereira',
-      nomeSocial: 'lukuzinha',
       login: 'carlos.pereira',
       email: 'carlos.pereira@example.com',
       permissao: $Enums.Permissao.ADM,
@@ -423,7 +404,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockUserAtualizado: Usuario = {
       id: '3',
       nome: 'Carlos Pereira',
-      nomeSocial: 'lukuzinha',
       login: 'carlaopereira',
       email: 'carlos.pereira@example.com',
       permissao: $Enums.Permissao.ADM,
@@ -466,7 +446,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockExcUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -499,7 +478,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockAutUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -527,7 +505,6 @@ describe('Usuarios.service testes unitários', () => {
     const mockValidUser: UsuarioResponseDTO = {
       id: '123456',
       nome: 'João da Silva',
-      nomeSocial: 'João',
       login: 'joao.silva',
       email: 'joao.silva@example.com',
       status: true,
@@ -626,7 +603,6 @@ describe('Usuarios.service testes unitários', () => {
       ultimoLogin: new Date('2024-01-01'),
       criadoEm: new Date('2024-01-01'),
       atualizadoEm: new Date('2024-01-01'),
-      nomeSocial: undefined,
     };
 
     jest.spyOn(service, 'buscarPorLogin').mockResolvedValue(mockUsuarioInativo);

@@ -5,10 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LogService } from 'src/logs/log.service';
-import { Chamado, StatusChamado } from '@prisma/client';
+import { StatusChamado } from '@prisma/client';
 import { CreateChamadoDto } from './dto/create-chamado.dto';
 import { UpdateChamadoDto } from './dto/update-chamado.dto';
-import { AppService } from "src/app.service";
+import { AppService } from 'src/app.service';
+import {
+  ChamadoResponseDto,
+  ChamadoPaginadoResponseDto,
+  ChamadoStatusResponseDto,
+} from './dto/chamado-response.dto';
 
 @Injectable()
 export class ChamadoService {
@@ -22,15 +27,10 @@ export class ChamadoService {
     pagina: number = 1,
     limite: number = 10,
     busca?: string,
-    status?: 'NOVO' | 'EM_ANDAMENTO' | 'RESOLVIDO' | 'FECHADO',
-    categoriaId?: number,
-    subcategoriaId?: number,
-  ): Promise<{
-    total: number;
-    pagina: number;
-    limite: number;
-    data: Chamado[];
-  }> {
+    status?: 'NOVO' | 'ATRIBUIDO' | 'RESOLVIDO' | 'REJEITADO' | 'FECHADO',
+    categoriaId?: string,
+    subcategoriaId?: string,
+  ): Promise<ChamadoPaginadoResponseDto> {
     [pagina, limite] = this.app.verificaPagina(pagina, limite);
 
     const searchParams: any = {
@@ -50,7 +50,7 @@ export class ChamadoService {
 
     [pagina, limite] = this.app.verificaLimite(pagina, limite, total);
 
-    const data = await this.prisma.chamado.findMany({
+    const data: ChamadoResponseDto[] = await this.prisma.chamado.findMany({
       where: searchParams,
       include: { categoria: true, subcategoria: true, criador: true },
       orderBy: { criadoEm: 'desc' },
@@ -61,14 +61,10 @@ export class ChamadoService {
     return { total, pagina, limite, data };
   }
 
-  async findOne(id: number): Promise<Chamado> {
+  async findOne(id: string): Promise<ChamadoResponseDto> {
     const chamado = await this.prisma.chamado.findUnique({
       where: { id },
-      include: {
-        categoria: true,
-        subcategoria: true,
-        criador: true,
-      },
+      include: { categoria: true, subcategoria: true, criador: true, tecnicos: true, acompanhamentos: true },
     });
     if (!chamado)
       throw new NotFoundException(`Chamado com id ${id} não encontrado.`);
@@ -78,13 +74,11 @@ export class ChamadoService {
   async create(
     createChamadoDto: CreateChamadoDto,
     usuarioId: string,
-  ): Promise<Chamado> {
+  ): Promise<ChamadoResponseDto> {
     try {
       const chamado = await this.prisma.chamado.create({
-        data: {
-          ...createChamadoDto,
-          criadorId: usuarioId,
-        },
+        data: { ...createChamadoDto, criadorId: usuarioId },
+        include: { criador: true },
       });
 
       await this.logService.criarLog(
@@ -95,22 +89,23 @@ export class ChamadoService {
       );
 
       return chamado;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Erro ao criar chamado.');
     }
   }
 
   async update(
-    id: number,
+    id: string,
     updateChamadoDto: UpdateChamadoDto,
     usuarioId: string,
-  ): Promise<Chamado> {
+  ): Promise<ChamadoResponseDto> {
     await this.findOne(id);
 
     try {
       const atualizado = await this.prisma.chamado.update({
         where: { id },
         data: updateChamadoDto,
+        include: { criador: true },
       });
 
       await this.logService.criarLog(
@@ -121,16 +116,19 @@ export class ChamadoService {
       );
 
       return atualizado;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Erro ao atualizar chamado.');
     }
   }
 
-  async remove(id: number, usuarioId: string): Promise<Chamado> {
+  async remove(id: string, usuarioId: string): Promise<ChamadoResponseDto> {
     await this.findOne(id);
 
     try {
-      const excluido = await this.prisma.chamado.delete({ where: { id } });
+      const excluido = await this.prisma.chamado.delete({
+        where: { id },
+        include: { criador: true },
+      });
 
       await this.logService.criarLog(
         usuarioId,
@@ -140,20 +138,20 @@ export class ChamadoService {
       );
 
       return excluido;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Erro ao excluir chamado.');
     }
   }
 
   async mudarStatus(
-    id: number,
+    id: string,
     status: StatusChamado,
     usuarioId: string,
-  ): Promise<Chamado> {
+  ): Promise<ChamadoStatusResponseDto> {
     await this.findOne(id);
 
     try {
-      const atualizado = await this.prisma.chamado.update({
+      await this.prisma.chamado.update({
         where: { id },
         data: { status },
       });
@@ -162,12 +160,12 @@ export class ChamadoService {
         usuarioId,
         'UPDATE',
         'Chamado',
-        atualizado.id.toString(),
+        id.toString(),
         `Status: ${status}`,
       );
 
-      return atualizado;
-    } catch (error) {
+      return { atualizado: true };
+    } catch {
       throw new InternalServerErrorException(
         'Erro ao atualizar status do chamado.',
       );

@@ -7,55 +7,64 @@ import {
   Put,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CategoriaService } from './categoria.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
-import { ApiTags } from '@nestjs/swagger';
-import { UsuarioAtual } from 'src/auth/decorators/usuario-atual.decorator';
-import { Usuario } from '@prisma/client';
+import {
+  CategoriaResponseDto,
+  CategoriaPaginadoResponseDto,
+} from './dto/categoria-response.dto';
 import { Permissoes } from 'src/auth/decorators/permissoes.decorator';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
-@ApiTags('categoria')
+@ApiTags('Categoria')
+@ApiBearerAuth()
 @Controller('categoria')
 export class CategoriaController {
   constructor(private readonly categoriaService: CategoriaService) {}
 
+  @Permissoes('ADM', 'TEC', 'USR')
   @Get('buscar-tudo')
-  findAll() {
-    return this.categoriaService.findAll();
+  buscarTudo(
+    @Query('pagina') pagina?: string,
+    @Query('limite') limite?: string,
+    @Query('busca') busca?: string,
+  ): Promise<CategoriaPaginadoResponseDto> {
+    return this.categoriaService.buscarTudo(+pagina, +limite, busca);
   }
 
+  @Permissoes('ADM', 'TEC', 'USR')
   @Get('buscar-por-id/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<CategoriaResponseDto> {
     return this.categoriaService.findOne(id);
   }
 
-  @Permissoes('ADM')
+  @Permissoes('ADM', 'USR')
   @Post('criar')
   create(
-    @UsuarioAtual() usuario: Usuario,
-    @Body() createCategoriaDto: CreateCategoriaDto,
-  ) {
-    return this.categoriaService.create(createCategoriaDto, usuario.id);
+    @Body() createCategoriaDto: CreateCategoriaDto
+  ): Promise<CategoriaResponseDto> {
+    return this.categoriaService.create(createCategoriaDto);
   }
 
-  @Permissoes('ADM')
+  @Permissoes('ADM', 'TEC')
   @Put('atualizar/:id')
   update(
-    @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCategoriaDto: UpdateCategoriaDto,
-  ) {
-    return this.categoriaService.update(id, updateCategoriaDto, usuario.id);
+    @Param('id', ParseIntPipe) id: string,
+    @Body() updateCategoriaDto: UpdateCategoriaDto
+  ): Promise<CategoriaResponseDto> {
+    return this.categoriaService.update(id, updateCategoriaDto);
   }
 
   @Permissoes('ADM')
-  @Delete('desativar/:id')
+  @Delete('remover/:id')
   remove(
-    @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    return this.categoriaService.remove(id, usuario.id);
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<CategoriaResponseDto> {
+    return this.categoriaService.remove(id);
   }
 }

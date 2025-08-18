@@ -1,22 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class CreateChamadoDto {
   @ApiProperty({ example: 'Erro no sistema X' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Deve ser texto.' })
+  @IsNotEmpty({message: 'Não deve estar vazio.' })
   titulo: string;
 
   @ApiProperty({ example: 'Descrição detalhada do problema' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Deve ser texto.' })
+  @IsNotEmpty({ message: 'Deve ser string' })
   descricao: string;
 
-  @ApiProperty({ example: 1 })
-  @IsInt()
-  categoriaId: number;
+  @ApiProperty({ description: 'ID da categoria relacionada (UUID).' })
+  @IsString({ message: 'CategoriaId deve ser string.' })
+  @IsNotEmpty({ message: 'CategoriaId não deve estar vazio.' })
+  categoriaId: string;
 
-  @ApiProperty({ example: 1 })
-  @IsInt()
-  subcategoriaId: number;
+  @ApiProperty({ description: 'ID da subcategoria relacionada (UUID).' })
+  @IsString({ message: 'SubcategoriaId deve ser string.' })
+  @IsNotEmpty({ message: 'SubcategoriaId não deve estar vazio.' })
+  subcategoriaId: string;
 }

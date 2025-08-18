@@ -154,7 +154,6 @@ export class UsuariosService {
       ...(busca && {
         OR: [
           { nome: { contains: busca } },
-          { nomeSocial: { contains: busca } },
           { login: { contains: busca } },
           { email: { contains: busca } },
         ],
@@ -322,7 +321,7 @@ export class UsuariosService {
         `${process.env.USER_LDAP}${process.env.LDAP_DOMAIN}`,
         process.env.PASS_LDAP,
       );
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException(
         'Não foi possível buscar o usuário.',
       );
@@ -339,7 +338,7 @@ export class UsuariosService {
       email = mail.toString().toLowerCase();
       login = samaccountname.toString().toLowerCase();
       return { nome, email, login };
-    } catch (error) {
+    } catch {
       await client.unbind();
       throw new InternalServerErrorException(
         'Não foi possível buscar o usuário.',
@@ -366,7 +365,7 @@ export class UsuariosService {
         `${process.env.USER_LDAP}${process.env.LDAP_DOMAIN}`,
         process.env.PASS_LDAP,
       );
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException(
         'Não foi possível buscar o usuário.',
       );
@@ -381,7 +380,7 @@ export class UsuariosService {
       const { name, mail } = usuario.searchEntries[0];
       nome = name.toString();
       email = mail.toString().toLowerCase();
-    } catch (error) {
+    } catch {
       await client.unbind();
       throw new InternalServerErrorException(
         'Não foi possível buscar o usuário.',
@@ -396,5 +395,37 @@ export class UsuariosService {
       where: { id },
       data: { ultimoLogin: new Date() },
     });
+  }
+
+  async criarPublico(
+    createUsuarioDto: CreateUsuarioDto,
+    usuarioLogado: Usuario,
+  ): Promise<UsuarioResponseDTO> {
+    const loguser: UsuarioResponseDTO = await this.buscarPorLogin(
+      createUsuarioDto.login,
+    );
+    if (loguser) throw new ForbiddenException('Login já cadastrado.');
+
+    const emailuser: UsuarioResponseDTO = await this.buscarPorEmail(
+      createUsuarioDto.email,
+    );
+    if (emailuser) throw new ForbiddenException('Email já cadastrado.');
+
+    let { permissao } = createUsuarioDto;
+    permissao = this.validaPermissaoCriador(permissao, usuarioLogado.permissao);
+
+    const usuario: Usuario = await this.prisma.usuario.create({
+      data: {
+        ...createUsuarioDto,
+        permissao,
+      },
+    });
+
+    if (!usuario)
+      throw new InternalServerErrorException(
+        'Não foi possível criar o usuário, tente novamente.',
+      );
+
+    return usuario;
   }
 }

@@ -1,4 +1,9 @@
 import {
+  ChamadoPaginadoResponseDto,
+  ChamadoResponseDto,
+  ChamadoStatusResponseDto,
+} from './dto/chamado-response.dto';
+import {
   Controller,
   Get,
   Post,
@@ -34,20 +39,20 @@ export class ChamadoController {
     @Query('status') status?: string,
     @Query('categoriaId') categoriaId?: string,
     @Query('subcategoriaId') subcategoriaId?: string,
-  ) {
+  ): Promise<ChamadoPaginadoResponseDto> {
     return this.chamadoService.buscarTudo(
       +pagina,
       +limite,
       busca,
       status as any,
-      categoriaId ? +categoriaId : undefined,
-      subcategoriaId ? +subcategoriaId : undefined,
+      categoriaId,
+      subcategoriaId,
     );
   }
 
   @Permissoes('ADM', 'TEC', 'USR')
   @Get('buscar-por-id/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: string): Promise<ChamadoResponseDto> {
     return this.chamadoService.findOne(id);
   }
 
@@ -56,7 +61,7 @@ export class ChamadoController {
   create(
     @UsuarioAtual() usuario: Usuario,
     @Body() createChamadoDto: CreateChamadoDto,
-  ) {
+  ): Promise<ChamadoResponseDto> {
     return this.chamadoService.create(createChamadoDto, usuario.id);
   }
 
@@ -64,9 +69,9 @@ export class ChamadoController {
   @Put('atualizar/:id')
   update(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() updateChamadoDto: UpdateChamadoDto,
-  ) {
+  ): Promise<ChamadoResponseDto> {
     return this.chamadoService.update(id, updateChamadoDto, usuario.id);
   }
 
@@ -74,9 +79,9 @@ export class ChamadoController {
   @Patch('atualizar-status/:id')
   mudarStatus(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() mudarStatusDto: UpdateStatusChamadoDto,
-  ) {
+  ): Promise<ChamadoStatusResponseDto> {
     return this.chamadoService.mudarStatus(
       id,
       mudarStatusDto.status,
@@ -88,8 +93,8 @@ export class ChamadoController {
   @Delete('remover/:id')
   remove(
     @UsuarioAtual() usuario: Usuario,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<ChamadoResponseDto> {
     return this.chamadoService.remove(id, usuario.id);
   }
 }
